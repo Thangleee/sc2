@@ -1,14 +1,22 @@
-module IMEM (
-    input  [31:0] addr,
-    output [31:0] Instruction
+module IMEM #(
+    parameter int     DEPTH          = 256,
+    parameter string  HEXFILE        = "imem.hex",
+    parameter logic [31:0] default_instr = 32'h0000_0013   // NOP (ADDI x0,x0,0)
+)(
+    input  logic [31:0] addr,         // byte address, word-aligned (bit [1:0] == 2'b00)
+    output logic [31:0] Instruction
 );
-    reg [31:0] memory [0:255];
-    assign Instruction = (addr[9:2] < 100) ? memory[addr[9:2]] : 32'h00000013; // NOP nếu out of range
-
+    logic [31:0] mem [0:DEPTH-1];
+    always_comb begin
+        if (addr[31:2] < DEPTH)
+            Instruction = mem[addr[31:2]];
+        else
+            Instruction = default_instr;
+    end    
     initial begin
-        $readmemh("./mem/imem2.hex", memory);
-        $display("IMEM0: %h", memory[0]);
-        $display("IMEM1: %h", memory[1]);
-        $display("IMEM2: %h", memory[2]);
+        $readmemh(HEXFILE, mem);
+        // Debug (tùy chọn): in 4 từ đầu tiên
+        $display("IMEM[0]=%h  IMEM[1]=%h  IMEM[2]=%h  IMEM[3]=%h",
+                 mem[0], mem[1], mem[2], mem[3]);
     end
 endmodule
